@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>test红一（red润一号机器人）</title>
+    <meta charset="UTF-8">
+    <style>
+        *{
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-size: 20px;
+            user-select: none;
+        }
+        h1{
+            height: 50px;
+            color: rgb(197, 201, 202);
+        }
+        html,body{width: 100%;height: 100%;}
+        .container{
+            width: calc(100%);
+            height: calc(100% - 50px - 100px);
+            display: flex;
+            flex-direction: column;
+        }
+        .top{
+            width: 100%;
+            height: 80%;
+            display: flex;
+            flex-wrap: wrap;
+        }
+        
+        .content{
+            background: rgb(222, 233, 216);
+            line-height: 100px;
+            text-align: center;
+            width: 100%;
+            height:20%;
+            overflow: scroll;
+        }
+        button{
+            width: 50%;
+            height: 10%;
+            border-radius: 15px;
+            background-color:aqua;
+        }
+    </style>
+  </head>
+  <body>
+    <h1 style="text-align:center;">遥控器</h1>
+    <div class="container">
+        <div class="top">
+            <button data-name="forward">前进</button>
+            <button data-name="backward">后退</button>
+            <button data-name="towardLeft">向左</button>
+            <button data-name="towardRight">向右</button>
+            
+            <button data-name="upAllFoot">站起来</button>
+            <button data-name="downAllFoot">躺下</button>
+            <button data-name="squatAllFoot">蹲起</button>
+            <button data-name="resetAllFoot">重置归位</button>
+        </div>
+        
+        <div class="content"></div>
+    </div>
+    <script>
+        const socket = new WebSocket('ws://' + location.host + '/echo');
+
+        let content = document.querySelector(".content");
+        let buttons = document.querySelectorAll("button");
+        
+        const throttle = (func,interval)=>{
+            let last = 0;
+            return function(){
+                let args = arguments
+                let now = Date.now();
+                if(now - last > interval){
+                    func.apply(this,args)
+                    last = now
+                }
+            }
+        }
+        // button.addEventListener("mousemove",throttle(function(e){
+        //         let taget = e.target;
+        //         let dataName = taget.getAttribute("data-name");
+        //         setContent('滑动了' + dataName, 'aqua');
+        //         console.log("要触发的事件" + dataName);
+        //         // socket.send(dataName)
+        //     },500))
+        buttons.forEach(button=>{
+            let timer = null
+            button.addEventListener("touchstart",(e)=>{
+                let taget = e.target;
+                let dataName = taget.getAttribute("data-name");
+                timer = setInterval(()=>{
+                    console.log(">>>>>>>>>>>>",dataName);
+                    socket.send(dataName)
+                },1000)
+                
+            })
+            button.addEventListener("touchend",(e)=>{
+                clearInterval(timer)
+            })
+        })
+        const setContent = (text,color)=>{
+            content.innerHTML = `<span style="color: ${color}">${text}</span><br>`
+        }
+      
+        socket.addEventListener('message', ev => {
+            setContent('收到消息' + ev.data, 'blue');
+        });
+        socket.addEventListener('close', ev => {
+            setContent('连接关闭' + ev.data, 'blue');
+        });
+
+    </script>
+  </body>
+</html>
+
+
